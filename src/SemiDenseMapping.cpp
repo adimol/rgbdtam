@@ -1344,7 +1344,7 @@ void semidense_mapping(DenseMapping *dense_mapper,SemiDenseMapping *semidense_ma
         ///////////////////////////////////////////////////////////////
 
         semidense_mapper->do_initialization_tracking = 1;
-
+        cout<<"Initialization_tracking = 1"<<endl;
 
         if (semidense_mapper->do_var_mapping > 0.5)
         {

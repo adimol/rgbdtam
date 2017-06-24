@@ -425,8 +425,8 @@ void loopcloser::calculate_orb_and_load_features(  cv::Mat &image,vector<cv::Mat
 
         cv::Mat mask_orb;
         #if CV_MAJOR_VERSION >= 3
-        cv::Ptr<cv::ORB> orb = cv::ORB::create(nFeatures,1.2,8,sizePatch,0,2,cv::ORB::HARRIS_SCORE,sizePatch);        
-        orb->detectAndCompute(image_orb, mask_orb, keypoints_orb, descriptors_orb);        
+        cv::Ptr<cv::ORB> orb = cv::ORB::create(nFeatures,1.2,8,sizePatch,0,2,cv::ORB::HARRIS_SCORE,sizePatch);
+        orb->detectAndCompute(image_orb, mask_orb, keypoints_orb, descriptors_orb);
         changeStructure_orb(descriptors_orb, features.back(), orb->descriptorSize());
         #else
         cv::ORB orb(nFeatures,1.2,8,sizePatch,0,2,cv::ORB::HARRIS_SCORE,sizePatch);

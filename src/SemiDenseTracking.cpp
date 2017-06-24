@@ -24,6 +24,9 @@
 #include <opencv2/core/eigen.hpp>
 #include <ros/ros.h>
 #include <ros/package.h>
+#include <time.h>
+
+#define BILLION 1000000000L;
 
 #include <image_transport/image_transport.h>
 
@@ -334,6 +337,9 @@ void prepare_image(SemiDenseTracking *semidense_tracker, cv::Mat &image_frame,
     cx = newCameraMatrix.at<float>(0,2);
     cy = newCameraMatrix.at<float>(1,2);
 
+    // cout<<"Rows: "<<cameraMatrix.rows<<endl;
+    // cout<<"Cols: "<<cameraMatrix.cols<<endl;
+
     image_n++;
 
     cv::cvtColor(image_frame,image_to_track,CV_RGB2GRAY);
@@ -473,6 +479,10 @@ void ThreadSemiDenseTracker(Images_class *images,SemiDenseMapping *semidense_map
                             SemiDenseTracking *semidense_tracker,DenseMapping *dense_mapper,\
                             MapShared *Map,ros::Publisher *vis_pub,image_transport::Publisher *pub_image)
 {
+    struct timespec start_clock, end_clock;
+    double elapsed_seconds;
+    clock_gettime(CLOCK_MONOTONIC, &start_clock);
+
     while(ros::ok() && dense_mapper->sequence_has_finished == false || semidense_mapper->num_keyframes < 2)
     {
         if (semidense_mapper->semaphore == false || (semidense_tracker->use_ros == 1))
@@ -491,13 +501,17 @@ void ThreadSemiDenseTracker(Images_class *images,SemiDenseMapping *semidense_map
             }
         }
     }
+    clock_gettime(CLOCK_MONOTONIC, &end_clock);
+    elapsed_seconds = (end_clock.tv_sec - start_clock.tv_sec)
+        + (double)(end_clock.tv_nsec - start_clock.tv_nsec) / (double)BILLION;
+    printf("Total time in ThreadSemiDenseTracker %lf\n", elapsed_seconds);
 
     cout << "semidense tracker thread has finished " <<endl;
     boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
     cout << "Printing keyframes after posegraph optimization" << endl;
     semidense_tracker->loopcloser_obj.print_keyframes_after_optimization();
     cout << "Total keyframes: " << semidense_tracker->loopcloser_obj.keyframes_vector.size() << endl;
- 
+
 
     /// We keep the visualizer for a few seconds even though the sequence has already finished
     boost::this_thread::sleep(boost::posix_time::milliseconds(5000));
@@ -757,6 +771,7 @@ void relocalization(SemiDenseTracking *semidense_tracker,SemiDenseMapping *semid
                     ,cv::Mat &R_kf, cv::Mat &t_kf,image_transport::Publisher *pub_image){
     if(semidense_tracker->SystemIsLost)
     {
+        cout<<"In relocalization..."<<endl;
         int oldest_kf = -1;
         cv::Mat image_rgb =  image_frame_aux.clone();
         cv::Mat matchings(0,2,CV_32FC1);
@@ -942,7 +957,7 @@ void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,
                         SemiDenseTracking *semidense_tracker,DenseMapping *dense_mapper,\
                         MapShared *Map,ros::Publisher *vis_pub,image_transport::Publisher *pub_image)
 {
-
+    // doesn't get executed
     if (semidense_tracker->frames.size() <= 2 && semidense_tracker->use_ros  == 0)
     {
         if ( semidense_tracker->image_n < semidense_tracker->left_image_names.size() - semidense_tracker->init_frame)
@@ -978,8 +993,18 @@ void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,
         cv::Mat image_frame_aux ;
         double stamps_aux;
 
+        struct timespec start_clock, end_clock;
+        double elapsed_seconds;
+        clock_gettime(CLOCK_MONOTONIC, &start_clock);
+
+
+        // never executes because we use ROS
         if(semidense_tracker->use_ros == 0)
         {
+            struct timespec start_clock, end_clock;
+            double elapsed_seconds;
+            clock_gettime(CLOCK_MONOTONIC, &start_clock);
+
             image_frame_aux  = semidense_tracker->frames[0].clone();
             semidense_tracker->frames.erase (semidense_tracker->frames.begin(),semidense_tracker->frames.begin()+1);
             stamps_aux =  semidense_tracker->frames_stamps[0];
@@ -990,14 +1015,25 @@ void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,
             prepare_image(semidense_tracker,image_frame_aux,semidense_tracker->image_to_track,\
                           semidense_tracker->image_n,semidense_tracker->image_gray,semidense_tracker->cameraMatrix,semidense_tracker->distCoeffs,\
                           semidense_tracker->fx,semidense_tracker->fy,semidense_tracker->cx,semidense_tracker->cy);
-        }else{
+          clock_gettime(CLOCK_MONOTONIC, &end_clock);
+          elapsed_seconds = (end_clock.tv_sec - start_clock.tv_sec)
+              + (double)(end_clock.tv_nsec - start_clock.tv_nsec) / (double)BILLION;
+          printf("Total time in use_ros %lf\n", elapsed_seconds);
+        }
 
+        // this executes - prepare image
+        else{
+            struct timespec start_clock, end_clock;
+            double elapsed_seconds;
+            clock_gettime(CLOCK_MONOTONIC, &start_clock);
+            // we are here
             /* image_frame_aux  = (semidense_tracker->frame_struct->image_frame).clone();
                  stamps_aux = semidense_tracker->frame_struct->stamps;*/
 
             int image_number = semidense_tracker->frame_struct_vector.size() / 2;
             image_number = 0;
             image_frame_aux  = (semidense_tracker->frame_struct_vector[image_number].image_frame).clone();
+
             stamps_aux = semidense_tracker->frame_struct_vector[image_number].stamps;
 
             semidense_tracker->last_cont_frames = *semidense_tracker->cont_frames;
@@ -1013,12 +1049,24 @@ void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,
                 semidense_tracker->frame_struct_vector.erase (semidense_tracker->frame_struct_vector.begin()+image_to_delete,semidense_tracker->frame_struct_vector.begin()+1+image_to_delete);
                 image_to_delete++;
             }
+
+            clock_gettime(CLOCK_MONOTONIC, &end_clock);
+            elapsed_seconds = (end_clock.tv_sec - start_clock.tv_sec)
+                + (double)(end_clock.tv_nsec - start_clock.tv_nsec) / (double)BILLION;
+            printf("Total time in prepare_image %lf\n", elapsed_seconds);
         }
 
         if (semidense_tracker->image_n > semidense_tracker->last_frame_tracked)
         {
+            // this if executes when changing blue/red points
+            // relocalization
             if (semidense_mapper->do_initialization_tracking > 0.5)
             {
+
+                struct timespec start_clock, end_clock;
+                double elapsed_seconds;
+                clock_gettime(CLOCK_MONOTONIC, &start_clock);
+
                 cv::Mat R_kf, t_kf;
                 semidense_mapper->reusing_map = false;
 
@@ -1075,7 +1123,9 @@ void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,
 
 
                 /// RELOCALIZATION IF NEEDED
+                // doesn't seem to get called
                 relocalization(semidense_tracker,semidense_mapper,image_frame_aux,R_kf, t_kf,pub_image);
+
                 /// RELOCALIZATION IF NEEDED
 
                 //// PREPARE SEMIDENSE
@@ -1111,13 +1161,22 @@ void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,
                 } // !system is lost
                 //// PREPARE SEMIDENSE
 
+                clock_gettime(CLOCK_MONOTONIC, &end_clock);
+                elapsed_seconds = (end_clock.tv_sec - start_clock.tv_sec)
+                    + (double)(end_clock.tv_nsec - start_clock.tv_nsec) / (double)BILLION;
+                printf("Total time in relocalization 2+3 %lf\n", elapsed_seconds);
+
             } // do_initialization_tracking
 
+            // doesn't seem to get into this, except at the very beginning
             if (semidense_mapper->do_initialization > 0.5 )
             {
+                // doesn't really get into this
+                struct timespec start_clock, end_clock;
+                double elapsed_seconds;
+                clock_gettime(CLOCK_MONOTONIC, &start_clock);
+
                 cv::Mat depth_frame;
-
-
                 depth_frame = cv::Mat::zeros(image_frame_aux.rows,image_frame_aux.cols,CV_32FC1);
 
                 semidense_tracker->R = (cv::Mat_<float>(3, 3) <<  1,0,0,0,1,0,0,0,1);
@@ -1165,12 +1224,21 @@ void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,
                         depth_frame_aux =  semidense_tracker->keyframe_depth[j];
                     }
                 }
+                clock_gettime(CLOCK_MONOTONIC, &end_clock);
+                elapsed_seconds = (end_clock.tv_sec - start_clock.tv_sec)
+                    + (double)(end_clock.tv_nsec - start_clock.tv_nsec) / (double)BILLION;
+                printf("Total time in relocalization 4 %lf\n", elapsed_seconds);
             }
 
-
+            // always executes
             if( !semidense_tracker->SystemIsLost)
             {
                 cv::Mat  coordinates_cam_to_print;
+
+                // struct timespec start_clock, end_clock;
+                // double elapsed_seconds;
+                // clock_gettime(CLOCK_MONOTONIC, &start_clock);
+
                 optimize_camera_pose(semidense_mapper->num_keyframes,semidense_tracker,semidense_mapper,*images,semidense_tracker->image_to_track,\
                                      image_frame_aux,semidense_tracker->R,semidense_tracker->t,\
                                      semidense_tracker->R_kf,semidense_tracker->t_kf,semidense_tracker->image_reduced,\
@@ -1182,6 +1250,14 @@ void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,
                                      semidense_tracker->pyramid_levels,semidense_tracker->overlap_tracking,\
                                      semidense_tracker->tracking_th,semidense_tracker->iter_th,semidense_tracker->variances,\
                                      semidense_tracker->image_gray, stamps_aux,semidense_mapper->mean_value,coordinates_cam_to_print);
+
+                //  clock_gettime(CLOCK_MONOTONIC, &end_clock);
+                //  elapsed_seconds = (end_clock.tv_sec - start_clock.tv_sec)
+                //      + (double)(end_clock.tv_nsec - start_clock.tv_nsec) / (double)BILLION;
+                 //printf("Total time in optimize_camera_pose %lf\n", elapsed_seconds);
+
+
+                // clock_gettime(CLOCK_MONOTONIC, &start_clock);
 
                 if(!semidense_tracker->SystemIsLost)
                 {
@@ -1238,10 +1314,18 @@ void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,
                         show_error_geo( semidense_tracker-> coordinates_depth_point_cloud,  image_frame_aux,
                                         semidense_tracker->weight_geo[semidense_tracker->pyramid_levels-1]);
 
+                        struct timespec start_clock, end_clock;
+                        double elapsed_seconds;
+                        clock_gettime(CLOCK_MONOTONIC, &start_clock);
+
                         show_error_photo( coordinates_cam_show,image_frame_aux,num_pixels_sd2project,
                                           pub_image,semidense_tracker->weight[semidense_tracker->pyramid_levels-1]);
-                    }
 
+                        // clock_gettime(CLOCK_MONOTONIC, &end_clock);
+                        // elapsed_seconds = (end_clock.tv_sec - start_clock.tv_sec)
+                        //   + (double)(end_clock.tv_nsec - start_clock.tv_nsec) / (double)BILLION;
+                        // printf("Total time in show_error_photo %lf\n", elapsed_seconds);
+                    }
 
                     if (semidense_tracker->create_inv_depth_discretization < 0.5)
                     {
@@ -1262,12 +1346,19 @@ void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,
 
                     semidense_mapper->images_size = images->getNumberOfImages();
 
-
                     if (images->getNumberOfImages() > 1)
                         semidense_mapper->semaphore = true;
                 } // if !SystemIsLost
+                // clock_gettime(CLOCK_MONOTONIC, &end_clock);
+                // elapsed_seconds = (end_clock.tv_sec - start_clock.tv_sec)
+                //   + (double)(end_clock.tv_nsec - start_clock.tv_nsec) / (double)BILLION;
+                // printf("Total time in !SystemIsLost %lf\n", elapsed_seconds);
             }// if !SystemIsLost
         } //  if (semidense_tracker->image_n > semidense_tracker->last_frame_tracked)
+        clock_gettime(CLOCK_MONOTONIC, &end_clock);
+        elapsed_seconds = (end_clock.tv_sec - start_clock.tv_sec)
+            + (double)(end_clock.tv_nsec - start_clock.tv_nsec) / (double)BILLION;
+        printf("Total time in 3rd if %lf\n", elapsed_seconds);
     } // if cont_frames >
 } // semidense_mapping
 
@@ -1698,11 +1789,11 @@ void show_error_photo( cv::Mat &coordinates_cam, cv::Mat &image_print,
 
             if (k<num_pixels_sd2project )
             {
-                image_print.at<cv::Vec3b>(yy,xx)[2] = 0;
-                image_print.at<cv::Vec3b>(yy+1,xx)[2] = 0;
-                image_print.at<cv::Vec3b>(yy,xx+1)[2] = 0;
-                image_print.at<cv::Vec3b>(yy-1,xx)[2] = 0;
-                image_print.at<cv::Vec3b>(yy,xx-1)[2] = 0;
+                // image_print.at<cv::Vec3b>(yy,xx)[2] = 0;
+                // image_print.at<cv::Vec3b>(yy+1,xx)[2] = 0;
+                // image_print.at<cv::Vec3b>(yy,xx+1)[2] = 0;
+                // image_print.at<cv::Vec3b>(yy-1,xx)[2] = 0;
+                // image_print.at<cv::Vec3b>(yy,xx-1)[2] = 0;
                 if (weight.at<float>(k,0) > 0.5)
                 {
                     image_print.at<cv::Vec3b>(yy,xx)[2]=255;
