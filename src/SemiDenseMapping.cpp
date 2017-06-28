@@ -23,6 +23,9 @@
 #include "rgbdtam/vo_system.h"
 #include "rgbdtam/loopcloser.h"
 #include <ros/package.h>
+#include <time.h>
+
+#define BILLION 1000000000L;
 
 #define U_SEGS(a)\
     gettimeofday(&tv,0);\
@@ -191,7 +194,14 @@ void ThreadSemiDenseMapper(Images_class *images,Images_class *images_previous_ke
         {
             if (insert_frame4mapping || (semidense_mapper->do_var_mapping == 1 && insert_frame4mapping) )
             {
+                // struct timespec start_clock, end_clock;
+                // double elapsed_seconds;
+                // clock_gettime(CLOCK_MONOTONIC, &start_clock);
                 semidense_mapping(dense_mapper,semidense_mapper,semidense_tracker,Map,images,images_previous_keyframe,pub_cloud);
+                // clock_gettime(CLOCK_MONOTONIC, &end_clock);
+                // elapsed_seconds = (end_clock.tv_sec - start_clock.tv_sec)
+                //     + (double)(end_clock.tv_nsec - start_clock.tv_nsec) / (double)BILLION;
+                // printf("Total time in semidense_mapper %lf\n", elapsed_seconds);
             }
             semidense_mapper->semaphore = false;
 
@@ -378,8 +388,10 @@ void semidense_mapping(DenseMapping *dense_mapper,SemiDenseMapping *semidense_ma
 
     int  regularization_size = 1;
     ////////////////////////////GET PHOTOMETRIC TERM_SD term_sd ///////////////////////////////////////
+//{
     if (semidense_mapper->do_init_semi > 0.5 )
     {
+        cout<<"do_init_semi"<<endl;
         cv::Mat points_ref_im_sd_init(0,3, CV_32FC1);
         cv::Mat image_points_byFocal_sd_init(0,3, CV_32FC1);
 
@@ -604,6 +616,7 @@ void semidense_mapping(DenseMapping *dense_mapper,SemiDenseMapping *semidense_ma
             }
         }
     }
+//}
     ////////////////////////////GET PHOTOMETRIC TERM_SD term_sd ///////////////////////////////////////
 
     int keyframe_obj;
@@ -618,6 +631,8 @@ void semidense_mapping(DenseMapping *dense_mapper,SemiDenseMapping *semidense_ma
     }
 
     cv::Mat sorted_baselines;
+
+    // calculate translational_ratio
     if(pimages_previous_keyframe->getNumberOfImages()>100)
     {
         cv::Mat baselines(0,1,CV_32FC1);
@@ -640,6 +655,7 @@ void semidense_mapping(DenseMapping *dense_mapper,SemiDenseMapping *semidense_ma
         cv::sort(baselines,sorted_baselines,CV_SORT_EVERY_COLUMN + CV_SORT_ASCENDING);
     }
 
+    // if do_var_mapping == false
     if (semidense_mapper->do_var_mapping < 0.5)
     {
         for (int i=init_mapping; i< end_mapping ; i = i+1)
@@ -718,8 +734,14 @@ void semidense_mapping(DenseMapping *dense_mapper,SemiDenseMapping *semidense_ma
             (semidense_tracker->overlap_tracking < 0.85 && semidense_mapper->num_cameras_mapping >= 6))
     {semidense_mapper->do_var_mapping = 1;}
 
+
+    // the big if do_var_mapping == true
      if (semidense_mapper->do_var_mapping > 0.5   )
      {
+
+         struct timespec start_clock, end_clock;
+         double elapsed_seconds;
+         clock_gettime(CLOCK_MONOTONIC, &start_clock);
         keyframe_obj=init_mapping;
         R1 = images.Im[reference_image]->R;
         t1 = images.Im[reference_image]->t;
@@ -770,6 +792,7 @@ void semidense_mapping(DenseMapping *dense_mapper,SemiDenseMapping *semidense_ma
                          final_variances,inv_depth_disparity_th,inv_depth_disparity_print_th, camera_motion);
 
         cv::Mat G_expanded = semidense_mapper->G_expanded.clone();
+
         ///////////////////// Median REGULARIZATION////////////////////////////////////////
         cv::Mat depths2regularize =  cv::Mat::zeros(images.Im[reference_image]->image.rows,images.Im[reference_image]->image.cols,CV_32FC1);
 
@@ -1181,6 +1204,8 @@ void semidense_mapping(DenseMapping *dense_mapper,SemiDenseMapping *semidense_ma
 
         cv::Mat t_r_ref ;
 
+
+        /// ADD ADITIONAL (NEIGHBOURING) POINTS TO THE MAP - adi
         if ( additional_points_aux2.rows > 100)
         {
             /// ADD ADITIONAL (NEIGHBOURING) POINTS TO THE MAP
@@ -1353,11 +1378,16 @@ void semidense_mapping(DenseMapping *dense_mapper,SemiDenseMapping *semidense_ma
             semidense_mapper->num_cameras_mapping = 0;
             semidense_mapper->num_keyframes++;
             semidense_mapper->do_init_semi=1;
+            cout<<"Num_Keyframes = "<<semidense_mapper->num_keyframes<<endl;
         }
 
         semidense_mapper -> points3D_toprint[num_keyframes]=points_aux2_print.clone();
         semidense_mapper->set_map_points_print(semidense_mapper->map_points);
 
+        clock_gettime(CLOCK_MONOTONIC, &end_clock);
+        elapsed_seconds = (end_clock.tv_sec - start_clock.tv_sec)
+            + (double)(end_clock.tv_nsec - start_clock.tv_nsec) / (double)BILLION;
+        printf("Total time in do_Var_mapping %lf\n", elapsed_seconds);
     } // do_Var_mapping > 0.5
 
     /// RELEASE MEMORY

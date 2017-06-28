@@ -1018,7 +1018,7 @@ void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,
           clock_gettime(CLOCK_MONOTONIC, &end_clock);
           elapsed_seconds = (end_clock.tv_sec - start_clock.tv_sec)
               + (double)(end_clock.tv_nsec - start_clock.tv_nsec) / (double)BILLION;
-          printf("Total time in use_ros %lf\n", elapsed_seconds);
+          printf("Total time in semidense_tracker %lf\n", elapsed_seconds);
         }
 
         // this executes - prepare image
@@ -1041,6 +1041,8 @@ void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,
             prepare_image(semidense_tracker,image_frame_aux,semidense_tracker->image_to_track,\
                           semidense_tracker->image_n,semidense_tracker->image_gray,semidense_tracker->cameraMatrix,semidense_tracker->distCoeffs,\
                           semidense_tracker->fx,semidense_tracker->fy,semidense_tracker->cx,semidense_tracker->cy);
+            // cout<<"Image frame after prepare rows : "<<image_frame_aux.rows<<" and cols: "<<image_frame_aux.cols<<endl;
+            // fflush(stdout);
 
             semidense_tracker->frame_struct_vector.erase (semidense_tracker->frame_struct_vector.begin()+image_number,semidense_tracker->frame_struct_vector.begin()+image_number+1);
 
@@ -1058,8 +1060,7 @@ void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,
 
         if (semidense_tracker->image_n > semidense_tracker->last_frame_tracked)
         {
-            // this if executes when changing blue/red points
-            // relocalization
+            // create new frame to track -- this if executes when changing blue/red points
             if (semidense_mapper->do_initialization_tracking > 0.5)
             {
 
@@ -1193,6 +1194,7 @@ void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,
                     semidense_mapper->kinect_initialization  = 0;
                 }
 
+                //cout<<"Depth frame rows: "<<depth_frame.rows<<" and cols: "<< depth_frame.cols<<endl;
 
                 initialization_semidense(semidense_tracker,semidense_tracker->R,semidense_tracker->t,semidense_tracker->R_kf,semidense_tracker->t_kf,image_frame_aux,semidense_tracker->image_keyframe,semidense_tracker->pyramid_levels,semidense_tracker->reduction_pyramid,semidense_tracker->focalx,semidense_tracker->focaly,\
                                          semidense_tracker->image_keyframe_pyramid,semidense_tracker->points_map,semidense_tracker->color,semidense_tracker->points3D,semidense_tracker->jacobian,semidense_tracker->error_vector,semidense_tracker->weight,semidense_tracker->fx,semidense_tracker->fy, semidense_tracker->depth,\
@@ -1201,6 +1203,9 @@ void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,
                 semidense_tracker->processed_frames_since_keyframe = 0;
                 semidense_mapper->points_last_keyframe = semidense_tracker->points_map[semidense_tracker->pyramid_levels-1].clone();
                 semidense_mapper->do_initialization = 0;
+
+                // cout<<"Points_map rows: "<<semidense_tracker->points_map[semidense_tracker->pyramid_levels-1].rows<<" and cols: "<< semidense_tracker->points_map[semidense_tracker->pyramid_levels-1].cols<<endl;
+
 
                 for (int j=0; j<semidense_tracker->pyramid_levels ; j++)
                 {
@@ -1251,6 +1256,7 @@ void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,
                                      semidense_tracker->tracking_th,semidense_tracker->iter_th,semidense_tracker->variances,\
                                      semidense_tracker->image_gray, stamps_aux,semidense_mapper->mean_value,coordinates_cam_to_print);
 
+                // cout<<"Image frame aux rows: "<<image_frame_aux.rows<<" and cols: "<<image_frame_aux.cols<<endl;
                 //  clock_gettime(CLOCK_MONOTONIC, &end_clock);
                 //  elapsed_seconds = (end_clock.tv_sec - start_clock.tv_sec)
                 //      + (double)(end_clock.tv_nsec - start_clock.tv_nsec) / (double)BILLION;
@@ -1396,6 +1402,9 @@ void initialization_semidense(SemiDenseTracking *semidense_tracker,cv::Mat &R,cv
     }
 }
 
+// this gets called from initialization code (only at the beginning)
+// creates a points struct, that has 6 values for each pixel from image (3 for depth, 3 gray values)
+// for each pyramid level, resize points, and place in points_map[pyramid_level]
 void initialization_semidense(SemiDenseTracking *semidense_tracker,cv::Mat &R,cv::Mat &t,cv::Mat &R1,cv::Mat &t1,cv::Mat &image_rgb,cv::Mat &image_keyframe,\
                               int &pyramid_levels,vector<int> &reduction_pyramid, vector<float> &focalx,vector<float> &focaly,vector<cv::Mat> &image_keyframe_pyramid,\
                               vector<cv::Mat> &points_map,vector<cv::Mat> &color,vector<cv::Mat> &points3D,vector<cv::Mat> &jacobian,vector<cv::Mat> &error_vector,vector<cv::Mat> &weight, float fx,float fy, float depth,\
@@ -1449,9 +1458,7 @@ void initialization_semidense(SemiDenseTracking *semidense_tracker,cv::Mat &R,cv
         }
     }
     points_i.copyTo(points);
-
-
-
+    //cout<<"Points_map_total rows: "<<points.rows<<" and cols: "<< points.cols<<endl;
 
     R.copyTo(R1);
     t.copyTo(t1);
@@ -1691,6 +1698,7 @@ void optimize_camera_pose(int num_keyframes,SemiDenseTracking *semidense_tracker
         cv::Mat error_check(0,1,CV_32FC1);
 
         cv::Mat coordinates_cam_p;
+        // output coordinates_cam_p from input R ...
         transform_points( coordinates_cam_p, R,t,focalx[pyramid_levels-1],focaly[pyramid_levels-1],
                 centerx[pyramid_levels-1],centery[pyramid_levels-1],points3D_tracked);
 
@@ -2391,23 +2399,18 @@ void gauss_newton_ic(SemiDenseTracking *semidense_tracker,cv::Mat &coordinates_c
             cv::Mat R_ = R.clone();
             cv::Mat t_ = t.clone();
 
-
             constant_error = cv::Mat::zeros(points3D_geo.cols,1,CV_32FC1) + 1;
             compute_geo_error(coordinates_cam_geo,semidense_tracker->frame_depth[pyramid_level],
                               transformed_points_cam_geo,error_geo_vector,error_geo_vector_sqrt,
                               constant_error,max_error_vector,use_inv_depth);
             semidense_tracker->coordinates_depth_point_cloud = coordinates_cam_geo.clone();
 
-
             weight_geo = 0.5 * weight_geo * cv::sum(error_vector_photo_weighted)[0] / cv::sum(error_geo_vector.mul(weight_geo))[0];
 
             cv::Mat error_geo_weighted = error_geo_vector.mul(weight_geo);
 
-
             bool init_it = true;
             int iterations = 0;
-
-
 
             cv::Mat error_vector_total = error_vector_photo_weighted.clone();
             error_vector_total.push_back(error_geo_weighted);
@@ -2456,11 +2459,8 @@ void gauss_newton_ic(SemiDenseTracking *semidense_tracker,cv::Mat &coordinates_c
                 cv::Mat v(3,1,CV_32FC1);
                 cv::Mat S,U,V;
 
-
-
                 if (imsize_y >  60)
                 { lambda *= 0;}
-
 
                 if (init_it && processed_frames < 0.5)
                 {
@@ -2520,17 +2520,11 @@ void gauss_newton_ic(SemiDenseTracking *semidense_tracker,cv::Mat &coordinates_c
                             }
                         }
 
-
                         for (int ii = 0; ii < 6;ii++)
                         {
                             jacobian_geo_weight.rowRange(0,jacobian_geo_weight.rows).colRange(ii,ii+1) =
                                     weight_geo.mul(jacobian_geo.rowRange(0,jacobian_geo_weight.rows).colRange(ii,ii+1)) ;
                         }
-
-
-
-
-
 
                         semidense_tracker->jacobian_photo_no_weight[pyramid_level].copyTo(jacobian_photo);
                         for(int ii = 0; ii < coordinates_cam.cols; ii++)
@@ -2552,7 +2546,6 @@ void gauss_newton_ic(SemiDenseTracking *semidense_tracker,cv::Mat &coordinates_c
                         }
                     }
                 }
-
                 ///PHOTO ERROR AND JACOBIAN
                 ///OPTIMIZATION
 
@@ -2561,8 +2554,6 @@ void gauss_newton_ic(SemiDenseTracking *semidense_tracker,cv::Mat &coordinates_c
                 cv::Mat weight_total = weight.clone();
                 weight_total.push_back(weight_geo);
 
-
-
                 if(only_depth)
                 {
                     jacobian_total1 = jacobian_geo_weight.clone();
@@ -2570,8 +2561,6 @@ void gauss_newton_ic(SemiDenseTracking *semidense_tracker,cv::Mat &coordinates_c
                     error_total_sqrt = error_geo_vector_sqrt.clone();
                     weight_total = weight_geo.clone();
                 }
-
-
 
                 cv::Mat tetha;
 
@@ -2610,11 +2599,8 @@ void gauss_newton_ic(SemiDenseTracking *semidense_tracker,cv::Mat &coordinates_c
                 R_ = R_upd*R;
                 t_ = R_upd*t+t_upd;
 
-
                 float gain_previous  = semidense_tracker->gain;
                 float brightness_previous  = semidense_tracker->brightness;
-
-
 
                 #pragma omp parallel num_threads(2)
                 {
@@ -2642,8 +2628,6 @@ void gauss_newton_ic(SemiDenseTracking *semidense_tracker,cv::Mat &coordinates_c
                     }
                     }
                 }
-
-
 
                 error_vector_total = error_vector_photo_weighted.clone();
                 cv::Mat error_geo_weighted = error_geo_vector.mul(weight_geo);

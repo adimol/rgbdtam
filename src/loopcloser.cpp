@@ -1322,6 +1322,7 @@ void loopcloser::compute_keyframe(cv::Mat &R, cv::Mat &t, cv::Mat &image, int nu
                                   float &fx, float &fy, float &cx, float &cy,
                                   double stamps,int size_first_level)
 {
+    cout<<endl<<"HEY"<<endl<<endl;
     num_keyframe = keyframes_vector.size();
     keyframe keyframe_aux;
 
