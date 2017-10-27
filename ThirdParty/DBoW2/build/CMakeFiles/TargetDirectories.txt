@@ -1,1 +1,0 @@
-/home/alejo/catkin_ws/src/rgbddpptam/ThirdParty/DBoW2/build/CMakeFiles/DBoW2.dir
