@@ -21,6 +21,7 @@ use_relocalization: 1
 depth_rgb_offset: -0.020
 depth_range_print: 1.7
  
+img_count: 100
 
 bgr2rgb: 0
 camera_path:"/camera/rgb/image_color"

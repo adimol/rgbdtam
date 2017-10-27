@@ -6,13 +6,13 @@ set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
-find_package(cmake_modules REQUIRED)
-find_package(catkin REQUIRED COMPONENTS roscpp sensor_msgs image_transport cv_bridge tf)
+#find_package(cmake_modules REQUIRED)
+#find_package(catkin REQUIRED COMPONENTS roscpp sensor_msgs image_transport cv_bridge tf)
 
-find_package(PCL 1.7.2 REQUIRED)
+find_package(PCL REQUIRED)
 
 set(CMAKE_BUILD_TYPE Debug)
-catkin_package(CATKIN_DEPENDS roscpp sensor_msgs image_transport cv_bridge tf)
+#catkin_package(CATKIN_DEPENDS roscpp sensor_msgs image_transport cv_bridge tf)
 
 set(DENSE_SOURCE_FILES     
 		src/SemiDenseMapping.cpp
@@ -41,13 +41,14 @@ find_package(Eigen3 REQUIRED)
 find_package(Cholmod REQUIRED)
 
 include_directories(
+${PROJECT_SOURCE_DIR}/include
 ${PROJECT_SOURCE_DIR}
 ${EIGEN3_INCLUDE_DIR}
 ${CHOLMOD_INCLUDE_DIR}
 )
 
 include_directories(
-  include ${catkin_INCLUDE_DIRS}
+  #include ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
@@ -95,7 +96,7 @@ ${PROJECT_SOURCE_DIR}/ThirdParty/g2o/lib/libg2o_types_sba.so
 ${PROJECT_SOURCE_DIR}/ThirdParty/g2o/lib/libg2o_types_sim3.so
 ${PROJECT_SOURCE_DIR}/ThirdParty/g2o/lib/libg2o_types_slam3d.so
 )
- install(PROGRAMS
-  scripts/run_bag
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+#  install(PROGRAMS
+#   scripts/run_bag
+#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )

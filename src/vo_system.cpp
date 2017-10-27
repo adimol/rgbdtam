@@ -22,64 +22,59 @@
 #include <fstream>
 #include <iomanip>    // Needed for stream modifiers fixed and set precision
 
-#include <ros/package.h>
-
-
 vo_system::vo_system(){
-
-
     ///vo_system launch the three threads, tracking, semidense mapping and dense mapping (3D superpixels)
 
-    cv::FileStorage  fs2( (ros::package::getPath("rgbdtam")+"/src/data.yml").c_str(), cv::FileStorage::READ);
+    const std::string path_to_yaml = "./src/data.yml";
+    cv::FileStorage  fs2(path_to_yaml, cv::FileStorage::READ);
 
-    std::string camera_path;
-    std::string depth_camera_path;
     fs2["camera_path"] >> camera_path;
     fs2["depth_camera_path"] >> depth_camera_path;
     fs2["use_ros"] >> use_ros;
     fs2["cameraMatrix"] >> cameraMatrix;
     fs2["distCoeffs"] >> distCoeffs;
+    fs2["img_count"] >> img_count;
 
     cont_frames = 0;
     counter_depth_images = 0;
 
     int calculate_superpixels = (int)fs2["calculate_superpixels"];
 
-    image_transport::ImageTransport it(nh);
+    // image_transport::ImageTransport it(nh);
 
-    odom_pub = nh.advertise<nav_msgs::Odometry>("odom1", 50);
-    /// advertising 3D map and camera poses in rviz
-    pub_cloud = nh.advertise<sensor_msgs::PointCloud2> ("rgbdtam/map", 1);
-    pub_poses = nh.advertise<sensor_msgs::PointCloud2> ("points_poses", 1);
-    vis_pub = nh.advertise<visualization_msgs::Marker>( "rgbdtam/visualization_marker", 0 );
-    /// advertising 3D map and camera poses in rviz
-    /// pubishing current frame and the reprojection of the 3D map
-    pub_image = it.advertise("rgbdtam/camera/image",1);
-    /// pubishing current frame and the reprojection of the 3D map
+    // odom_pub = nh.advertise<nav_msgs::Odometry>("odom1", 50);
+    // /// advertising 3D map and camera poses in rviz
+    // pub_cloud = nh.advertise<sensor_msgs::PointCloud2> ("rgbdtam/map", 1);
+    // pub_poses = nh.advertise<sensor_msgs::PointCloud2> ("points_poses", 1);
+    // vis_pub = nh.advertise<visualization_msgs::Marker>( "rgbdtam/visualization_marker", 0 );
+    // /// advertising 3D map and camera poses in rviz
+    // /// pubishing current frame and the reprojection of the 3D map
+    // pub_image = it.advertise("rgbdtam/camera/image",1);
+    // /// pubishing current frame and the reprojection of the 3D map
     semidense_tracker.cont_frames = &cont_frames;
     semidense_tracker.frame_struct = &frame_struct;
 
-    #pragma omp parallel num_threads(3)
-    {
-        switch(omp_get_thread_num())
-        {
-        case 0:
-        {
-            ///Launch semidense tracker thread
-            boost::thread thread_semidense_tracker(&ThreadSemiDenseTracker,&images,&semidense_mapper,&semidense_tracker,&dense_mapper,&Map,&vis_pub,&pub_image);
-        };break;
-        case 1:
-        {
-            ///Launch semidense mapper thread
-            boost::thread thread_semidense_mapper(&ThreadSemiDenseMapper,&images,&images_previous_keyframe,&semidense_mapper,&semidense_tracker,&dense_mapper,&Map,&pub_cloud);
-        };break;
-        case 2:
-        {
-            ///Launch viewer updater.
-            boost::thread thread_viewer_updater(&ThreadViewerUpdater, &semidense_tracker,&semidense_mapper,&dense_mapper);
-        }
-        }
-    }
+    // #pragma omp parallel num_threads(3)
+    // {
+    //     switch(omp_get_thread_num())
+    //     {
+    //     case 0:
+    //     {
+    //         ///Launch semidense tracker thread
+    //         boost::thread thread_semidense_tracker(&ThreadSemiDenseTracker,&images,&semidense_mapper,&semidense_tracker,&dense_mapper,&Map,&vis_pub,&pub_image);
+    //     };break;
+    //     case 1:
+    //     {
+    //         ///Launch semidense mapper thread
+    //         boost::thread thread_semidense_mapper(&ThreadSemiDenseMapper,&images,&images_previous_keyframe,&semidense_mapper,&semidense_tracker,&dense_mapper,&Map,&pub_cloud);
+    //     };break;
+    //     case 2:
+    //     {
+    //         ///Launch viewer updater.
+    //         boost::thread thread_viewer_updater(&ThreadViewerUpdater, &semidense_tracker,&semidense_mapper,&dense_mapper);
+    //     }
+    //     }
+    // }
 
 
 
@@ -93,58 +88,39 @@ vo_system::vo_system(){
     cout << "***    RGBDTAM is working     *** " <<  endl << endl;
     cout << "***    Launch the example sequences or use your own sequence / live camera and update the file 'data.yml' with the corresponding camera_path and calibration parameters    ***"  << endl;
 
-    if(use_ros == 1)
-    {
-        sub1 = it.subscribe(camera_path,1, & vo_system::imgcb,this);
-        if(semidense_tracker.use_kinect || semidense_mapper.kinect_initialization )
-            sub2 = it.subscribe(depth_camera_path,1, & vo_system::depthcb,this);
-    }
+    // if(use_ros == 1)
+    // {
+    //     sub1 = it.subscribe(camera_path,1, & vo_system::imgcb,this);
+    //     if(semidense_tracker.use_kinect || semidense_mapper.kinect_initialization )
+    //         sub2 = it.subscribe(depth_camera_path,1, & vo_system::depthcb,this);
+    // }
 }
 
-
-
-
-void vo_system::imgcb(const sensor_msgs::Image::ConstPtr& msg)
+void vo_system::imgcb(const std::string path)
 {
-    ///read images
-    try
-    {
-        boost::mutex::scoped_lock lock(semidense_tracker.loopcloser_obj.guard);
+    boost::mutex::scoped_lock lock(semidense_tracker.loopcloser_obj.guard);
 
+    cv::Mat image =  cv_ptr->imread(path);
 
-        cv_bridge::CvImageConstPtr cv_ptr;
-        cv_bridge::toCvShare(msg);
-        cv_ptr = cv_bridge::toCvShare(msg);
+    /// add gaussian blur
+    cv::Mat image_frame_aux;
+    cv::GaussianBlur(image,image_frame_aux,cv::Size(0,0),3);
+    cv::addWeighted(image,1.5,image_frame_aux,-0.5,0,image_frame_aux);
+    image = image_frame_aux.clone();
+    if (semidense_tracker.bgr2rgb > 0.5){cv::cvtColor(image,image,CV_RGB2BGR);}
+    /// add gaussian blur
 
+    frame_struct.image_frame =image.clone();
+    frame_struct.stamps = cv_ptr->header.stamp.toSec();
 
-        cv::Mat image =  cv_ptr->image.clone();
+    semidense_tracker.frame_struct_vector.push_back(frame_struct);
 
-
-        /// add gaussian blur
-        cv::Mat image_frame_aux;
-        cv::GaussianBlur(image,image_frame_aux,cv::Size(0,0),3);
-        cv::addWeighted(image,1.5,image_frame_aux,-0.5,0,image_frame_aux);
-        image = image_frame_aux.clone();
-        if (semidense_tracker.bgr2rgb > 0.5){cv::cvtColor(image,image,CV_RGB2BGR);}
-        /// add gaussian blur
-
-        frame_struct.image_frame =image.clone();
-        frame_struct.stamps = cv_ptr->header.stamp.toSec();
-
-        semidense_tracker.frame_struct_vector.push_back(frame_struct);
-
-
-        cont_frames++;
-    }
-    catch (const cv_bridge::Exception& e)
-    {
-        ROS_ERROR("cv_bridge exception: %s", e.what());
-    }
+    cont_frames++;
 }
 
 
 
-void vo_system::depthcb(const sensor_msgs::Image::ConstPtr& msg)
+void vo_system::depthcb(const std::string path)
 {
     ///read images
     try {

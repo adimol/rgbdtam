@@ -92,8 +92,8 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "camera_image");
-    ros::start();
+    // ros::init(argc, argv, "camera_image");
+    // ros::start();
 
     //srand ( (unsigned)time(0) );
     omp_set_dynamic(0);
@@ -102,8 +102,17 @@ int main(int argc, char** argv)
 
     ///Launching rgbdtam
     vo_system vo_system_object;
+
+    std::stringstream str;
+    for (int i = 0; i < vo_system_object.img_count; i++)
+    {
+        str << vo_system_object.camera_path << std::setw(6) << std::setfill('0')
+            << i << ".png";
+        vo_system_object.imgcb(str);
+        //vo_system_object.depthcb();
+    }
+
     ///Launching rgbdtam
-    ros::spin();
 
     cout << "leaving..." << endl;
     return  0;

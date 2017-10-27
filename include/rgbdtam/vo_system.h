@@ -45,8 +45,8 @@ using namespace std;
 #include <boost/filesystem.hpp>
 
 
-#include <ros/ros.h>
-#include <pcl_ros/point_cloud.h>
+//#include <ros/ros.h>
+//#include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
 
 #include <nav_msgs/Odometry.h>
@@ -56,7 +56,7 @@ using namespace std;
 
 /////ROS IMAGE SUBSCRIBER
 #include <iostream>
-#include <ros/ros.h>
+//#include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 #include <cv_bridge/cv_bridge.h>
@@ -76,6 +76,9 @@ public:
     void imgcb(const sensor_msgs::Image::ConstPtr& msg);
     vector<string> left_image_names;
 
+    std::string camera_path;
+    std::string depth_camera_path;
+    int img_count;
 
     DenseMapping dense_mapper;
     SemiDenseTracking semidense_tracker;

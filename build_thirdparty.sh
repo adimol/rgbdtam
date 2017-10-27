@@ -4,7 +4,7 @@ rm -rf lib
 mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j
+make -j 2
 
 
 cd ../../g2o
@@ -13,7 +13,7 @@ rm -rf lib
 mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j
+make -j 2
 
 
 cd ../../segment
