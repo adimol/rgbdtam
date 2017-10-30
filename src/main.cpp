@@ -103,12 +103,11 @@ int main(int argc, char** argv)
     ///Launching rgbdtam
     vo_system vo_system_object;
 
-    std::stringstream str;
     for (int i = 0; i < vo_system_object.img_count; i++)
     {
-        str << vo_system_object.camera_path << std::setw(6) << std::setfill('0')
+        std::stringstream str << vo_system_object.camera_path << std::setw(6) << std::setfill('0')
             << i << ".png";
-        vo_system_object.imgcb(str);
+        vo_system_object.imgcb(str.str().c_str());
         //vo_system_object.depthcb();
     }
 

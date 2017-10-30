@@ -73,7 +73,7 @@ public:
     vo_system();
 
 
-    void imgcb(const sensor_msgs::Image::ConstPtr& msg);
+    void imgcb(const std::string path);
     vector<string> left_image_names;
 
     std::string camera_path;
@@ -110,7 +110,7 @@ public:
     ros::Publisher vis_pub;
 
 
-    void depthcb(const sensor_msgs::Image::ConstPtr& msg);
+    void depthcb(const std::string path);
     ros::Time  stamps_depth_ros;
     cv::Mat image_depth;
     image_transport::Subscriber sub2;

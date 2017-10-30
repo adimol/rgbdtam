@@ -100,7 +100,7 @@ void vo_system::imgcb(const std::string path)
 {
     boost::mutex::scoped_lock lock(semidense_tracker.loopcloser_obj.guard);
 
-    cv::Mat image =  cv_ptr->imread(path);
+    cv::Mat image(cv::imread(path, 0));
 
     /// add gaussian blur
     cv::Mat image_frame_aux;
@@ -111,7 +111,7 @@ void vo_system::imgcb(const std::string path)
     /// add gaussian blur
 
     frame_struct.image_frame =image.clone();
-    frame_struct.stamps = cv_ptr->header.stamp.toSec();
+    frame_struct.stamps += 0.1;
 
     semidense_tracker.frame_struct_vector.push_back(frame_struct);
 
@@ -120,44 +120,44 @@ void vo_system::imgcb(const std::string path)
 
 
 
-void vo_system::depthcb(const std::string path)
-{
-    ///read images
-    try {
-        cv_bridge::CvImageConstPtr cv_ptr;
+// void vo_system::depthcb(const std::string path)
+// {
+//     ///read images
+//     try {
+//         cv_bridge::CvImageConstPtr cv_ptr;
 
-        cv_bridge::toCvShare(msg);
-        cv_ptr = cv_bridge::toCvShare(msg);
+//         cv_bridge::toCvShare(msg);
+//         cv_ptr = cv_bridge::toCvShare(msg);
 
-        stamps_depth_ros =  cv_ptr->header.stamp;
-        image_depth =  cv_ptr->image.clone();
+//         stamps_depth_ros =  cv_ptr->header.stamp;
+//         image_depth =  cv_ptr->image.clone();
 
 
-        image_depth.convertTo(image_depth,CV_32FC1);
+//         image_depth.convertTo(image_depth,CV_32FC1);
 
-        for(int i =  0;i < image_depth.rows; i++){
-            for(int j = 0; j< image_depth.cols; j++){
-                if( isnan( image_depth.at<float>(i,j)))
-                    image_depth.at<float>(i,j) = 0;
-            }
-        }
-        //UNDISTORT DEPTH MAP
-        cv::Size ksize;
-        ksize.width = image_depth.cols;
-        ksize.height = image_depth.rows;
-        cv::Mat undistorted_depth_map;
-        if(semidense_tracker.mapX.rows>0)
-        {cv::remap(image_depth,undistorted_depth_map,semidense_tracker.mapX,semidense_tracker.mapY,
-                   CV_INTER_NN,cv::BORDER_CONSTANT,cv::Scalar(0,0,0));
-            image_depth = undistorted_depth_map;}
-        //UNDISTORT DEPTH MAP
+//         for(int i =  0;i < image_depth.rows; i++){
+//             for(int j = 0; j< image_depth.cols; j++){
+//                 if( isnan( image_depth.at<float>(i,j)))
+//                     image_depth.at<float>(i,j) = 0;
+//             }
+//         }
+//         //UNDISTORT DEPTH MAP
+//         cv::Size ksize;
+//         ksize.width = image_depth.cols;
+//         ksize.height = image_depth.rows;
+//         cv::Mat undistorted_depth_map;
+//         if(semidense_tracker.mapX.rows>0)
+//         {cv::remap(image_depth,undistorted_depth_map,semidense_tracker.mapX,semidense_tracker.mapY,
+//                    CV_INTER_NN,cv::BORDER_CONSTANT,cv::Scalar(0,0,0));
+//             image_depth = undistorted_depth_map;}
+//         //UNDISTORT DEPTH MAP
 
-        semidense_mapper.image_depth_keyframes[counter_depth_images%SIZE_DEPTH_VECTOR] = image_depth;
-        semidense_mapper.stamps_depth_ros[counter_depth_images%SIZE_DEPTH_VECTOR] = stamps_depth_ros.toSec();
-        counter_depth_images++;
-    }
-    catch (const cv_bridge::Exception& e)
-    {
-        ROS_ERROR("cv_bridge exception: %s", e.what());
-    }
-}
+//         semidense_mapper.image_depth_keyframes[counter_depth_images%SIZE_DEPTH_VECTOR] = image_depth;
+//         semidense_mapper.stamps_depth_ros[counter_depth_images%SIZE_DEPTH_VECTOR] = stamps_depth_ros.toSec();
+//         counter_depth_images++;
+//     }
+//     catch (const cv_bridge::Exception& e)
+//     {
+//         ROS_ERROR("cv_bridge exception: %s", e.what());
+//     }
+// }
