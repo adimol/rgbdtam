@@ -22,12 +22,11 @@
 
 
 #include "rgbdtam/loopcloser.h"
-#include <ros/package.h>
 #include <Eigen/Dense>
 
 loopcloser::loopcloser()
 {
-    cv::FileStorage  fs2( (ros::package::getPath("rgbdtam")+"/src/data.yml").c_str(), cv::FileStorage::READ);
+    cv::FileStorage  fs2("./src/data.yml", cv::FileStorage::READ);
 
     use_kinect  = (int)fs2["use_kinect"];
 
@@ -35,7 +34,7 @@ loopcloser::loopcloser()
 
     char buffer[150];
 
-    sprintf (buffer,(ros::package::getPath("rgbdtam") + "/ThirdParty/DBoW2/ORBvoc.txt").c_str());
+    sprintf (buffer,("./ThirdParty/DBoW2/ORBvoc.txt"));
 
     try{
         std::ifstream infile(buffer);

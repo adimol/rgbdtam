@@ -20,8 +20,8 @@ set(DENSE_SOURCE_FILES
                  src/SemiDenseTracking.cpp
                 src/vo_system.cpp
                 src/superpixel.cpp
-                # src/loopcloser.cpp
-                # src/posegraph_Optimizer.cpp
+                src/loopcloser.cpp
+                src/posegraph_Optimizer.cpp
                 src/main.cpp
 )
 
