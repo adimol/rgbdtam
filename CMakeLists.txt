@@ -15,13 +15,13 @@ set(CMAKE_BUILD_TYPE Debug)
 #catkin_package(CATKIN_DEPENDS roscpp sensor_msgs image_transport cv_bridge tf)
 
 set(DENSE_SOURCE_FILES     
-		src/SemiDenseMapping.cpp
-                src/DenseMapping.cpp
-                src/SemiDenseTracking.cpp
+		# src/SemiDenseMapping.cpp
+  #               src/DenseMapping.cpp
+  #               src/SemiDenseTracking.cpp
                 src/vo_system.cpp
-                src/superpixel.cpp
-                src/loopcloser.cpp
-                src/posegraph_Optimizer.cpp
+                # src/superpixel.cpp
+                # src/loopcloser.cpp
+                # src/posegraph_Optimizer.cpp
                 src/main.cpp
 )
 

@@ -44,24 +44,11 @@ using namespace std;
 #include <stdio.h>
 #include <boost/filesystem.hpp>
 
-
-//#include <ros/ros.h>
-//#include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
-
-#include <nav_msgs/Odometry.h>
-#include <sensor_msgs/Imu.h>
-
-#include <visualization_msgs/Marker.h>
 
 /////ROS IMAGE SUBSCRIBER
 #include <iostream>
-//#include <ros/ros.h>
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/image_encodings.h>
-#include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
-#include <image_transport/image_transport.h>
 
 #include "rgbdtam/superpixel.h"
 #include "rgbdtam/DenseMapping.h"
@@ -94,26 +81,26 @@ public:
 
 
     float depth_stamps;
-    ros::Time stamps_ros;
+    // ros::Time stamps_ros;
 
-    ros::NodeHandle nh;
-    image_transport::Subscriber sub1;
-
-
-
-    image_transport::Publisher pub_image;
-    ros::Publisher odom_pub;
+    // ros::NodeHandle nh;
+    // image_transport::Subscriber sub1;
 
 
-    ros::Publisher pub_cloud;
-    ros::Publisher pub_poses;
-    ros::Publisher vis_pub;
+
+    // image_transport::Publisher pub_image;
+    // ros::Publisher odom_pub;
+
+
+    // ros::Publisher pub_cloud;
+    // ros::Publisher pub_poses;
+    // ros::Publisher vis_pub;
 
 
     void depthcb(const std::string path);
-    ros::Time  stamps_depth_ros;
+    //ros::Time  stamps_depth_ros;
     cv::Mat image_depth;
-    image_transport::Subscriber sub2;
+    //image_transport::Subscriber sub2;
     int counter_depth_images;
 
     int use_ros;

@@ -28,7 +28,7 @@
 
 #include "rgbdtam/vo_system.h"
 
-#include <opencv2/opencv.hpp>
+//#include <opencv2/opencv.hpp>
 #include "opencv2/imgproc/imgproc.hpp"
 
 //#include "stdafx1.h"
@@ -41,12 +41,7 @@
 
 /////ROS IMAGE SUBSCRIBER
 #include <iostream>
-#include <ros/ros.h>
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/image_encodings.h>
-#include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
-#include <image_transport/image_transport.h>
 
 
 #include <fstream>
@@ -73,13 +68,8 @@ using namespace std;
 #include <iostream>
 #include <stdio.h>
 #include <boost/filesystem.hpp>
-#include <ros/ros.h>
-#include <nav_msgs/Odometry.h>
-#include<sensor_msgs/Imu.h>
-
 
 #include <thread>
-
 
 //pragma omp
 #include <omp.h>
@@ -87,7 +77,7 @@ using namespace std;
 
 //// file storage
 #include <time.h>
-#include "opencv2/opencv.hpp"
+//#include "opencv2/opencv.hpp"
 
 
 int main(int argc, char** argv)
@@ -105,7 +95,8 @@ int main(int argc, char** argv)
 
     for (int i = 0; i < vo_system_object.img_count; i++)
     {
-        std::stringstream str << vo_system_object.camera_path << std::setw(6) << std::setfill('0')
+        std::stringstream str;
+        str << vo_system_object.camera_path << std::setw(6) << std::setfill('0')
             << i << ".png";
         vo_system_object.imgcb(str.str().c_str());
         //vo_system_object.depthcb();

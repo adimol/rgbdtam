@@ -37,9 +37,6 @@
 #include <string>
 //directorio
 #include <dirent.h>
-#include <ros/ros.h>
-#include <image_transport/image_transport.h>
-
 
 #include "rgbdtam/SemiDenseMapping.h"
 using namespace std;
@@ -47,11 +44,10 @@ using namespace std;
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
-#include <cv_bridge/cv_bridge.h>
-#include <opencv2/opencv.hpp>
+//#include <opencv2/opencv.hpp>
 #include "opencv2/imgproc/imgproc.hpp"
 
-#include <tf/transform_broadcaster.h>
+//#include <tf/transform_broadcaster.h>
 
 
 
@@ -171,7 +167,6 @@ public:
     int use_depth_tracking;
 
     int *cont_frames;
-    ros::Time *stamps_ros;
 
     int last_cont_frames;
 
@@ -237,10 +232,10 @@ void ThreadViewerUpdater( SemiDenseTracking *semidense_tracker,SemiDenseMapping 
 
 ///Semidense tracker thread
 void ThreadSemiDenseTracker(Images_class *images,SemiDenseMapping *semidense_mapper,\
-                            SemiDenseTracking *semidense_tracker,DenseMapping *dense_mapper,MapShared *Map,ros::Publisher *vis_pub,image_transport::Publisher *pub_image);
+                            SemiDenseTracking *semidense_tracker,DenseMapping *dense_mapper,MapShared *Map);
 ///semidense_tracking function
 void  semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,\
-                         SemiDenseTracking *semidense_tracker,DenseMapping *dense_mapper,MapShared *Map, ros::Publisher *vis_pub,image_transport::Publisher *pub_image);
+                         SemiDenseTracking *semidense_tracker,DenseMapping *dense_mapper,MapShared *Map);
 ///initialize semidense map to be tracked
 void initialization_semidense(SemiDenseTracking *semidense_tracker, cv::Mat &R, cv::Mat &t, cv::Mat &R1, cv::Mat &t1, cv::Mat &image_rgb, cv::Mat &image_keyframe, \
                               int &pyramid_levels, vector<int> &reduction_pyramid, vector<cv::Mat> &image_keyframe_pyramid);
@@ -277,7 +272,7 @@ void optimize_camera_pose(int num_keyframes, SemiDenseTracking *semidense_tracke
 
 
 /// show the photometric reprojection of the map into the current frame
-void show_error_photo(cv::Mat &points3D_cam,  cv::Mat &image_print, int num_pixels_sd2project, image_transport::Publisher *pub_image, cv::Mat &weight);
+void show_error_photo(cv::Mat &points3D_cam,  cv::Mat &image_print, int num_pixels_sd2project, cv::Mat &weight);
 
 /// Shoe the geometric reprojection of the map into the current frame
 void show_error_geo(cv::Mat &coordinates_cam,  cv::Mat &image_print, cv::Mat& weight_geo);
