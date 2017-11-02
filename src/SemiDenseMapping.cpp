@@ -22,7 +22,6 @@
 #include "rgbdtam/SemiDenseMapping.h"
 #include "rgbdtam/vo_system.h"
 #include "rgbdtam/loopcloser.h"
-#include <ros/package.h>
 
 #define U_SEGS(a)\
     gettimeofday(&tv,0);\
@@ -41,7 +40,7 @@ SemiDenseMapping::SemiDenseMapping():do_initialization(1),do_optimization(0), do
     num_cameras_mapping(0), num_keyframes(0), do_init_semi(1), images_size(0), overlap_tracking(1),
     frames_previous_keyframe_processed(0),frames_previous_keyframe_used(0),convergence(1),convergence_total(0)
 {
-    cv::FileStorage  fs2( (ros::package::getPath("rgbdtam")+"/src/data.yml").c_str(), cv::FileStorage::READ);
+    cv::FileStorage  fs2("./src/data.yml", cv::FileStorage::READ);
 
     int pyramid_levels = 4;
 
@@ -169,10 +168,10 @@ void copy_previous_kf_images(Images_class &images,Images_class *pimages_previous
 
 
 void ThreadSemiDenseMapper(Images_class *images,Images_class *images_previous_keyframe,SemiDenseMapping *semidense_mapper,\
-                           SemiDenseTracking *semidense_tracker,DenseMapping *dense_mapper,MapShared *Map, ros::Publisher *pub_cloud)
+                           SemiDenseTracking *semidense_tracker,DenseMapping *dense_mapper,MapShared *Map)
 {
     /// loopcloser
-    while(ros::ok() && dense_mapper->sequence_has_finished == false  || semidense_mapper->num_keyframes < 2)
+    while(dense_mapper->sequence_has_finished == false  || semidense_mapper->num_keyframes < 2)
         /// loopcloser
     {
         boost::this_thread::sleep(boost::posix_time::milliseconds(1));
@@ -191,7 +190,7 @@ void ThreadSemiDenseMapper(Images_class *images,Images_class *images_previous_ke
         {
             if (insert_frame4mapping || (semidense_mapper->do_var_mapping == 1 && insert_frame4mapping) )
             {
-                semidense_mapping(dense_mapper,semidense_mapper,semidense_tracker,Map,images,images_previous_keyframe,pub_cloud);
+                semidense_mapping(dense_mapper,semidense_mapper,semidense_tracker,Map,images,images_previous_keyframe);
             }
             semidense_mapper->semaphore = false;
 
@@ -244,7 +243,7 @@ bool check_keyframe_insertion(SemiDenseMapping *semidense_mapper,SemiDenseTracki
                                 100 * count_points_converged / semidense_mapper->points_convergence.rows >  semidense_mapper -> minim_points_converged);
 }
 void semidense_mapping(DenseMapping *dense_mapper,SemiDenseMapping *semidense_mapper,SemiDenseTracking *semidense_tracker,\
-                       MapShared  *Map,Images_class *pimages,Images_class  *pimages_previous_keyframe,ros::Publisher *pub_cloud)
+                       MapShared  *Map,Images_class *pimages,Images_class  *pimages_previous_keyframe)
 {
 
     //cout << "semidense_mapper->semaphore  " << 0 << endl;
