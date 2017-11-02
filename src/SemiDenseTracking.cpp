@@ -22,10 +22,6 @@
 #include "rgbdtam/vo_system.h"
 #include <Eigen/Dense>
 #include <opencv2/core/eigen.hpp>
-#include <ros/ros.h>
-#include <ros/package.h>
-
-#include <image_transport/image_transport.h>
 
 #define U_SEGSt(a)\
     gettimeofday(&tvt,0);\
@@ -41,9 +37,8 @@ void toct(){U_SEGSt(t2t);
 SemiDenseTracking::SemiDenseTracking()
 {
     tic_initt();
-
-    cv::FileStorage  fs2( (ros::package::getPath("rgbdtam")+
-                           "/src/data.yml").c_str(), cv::FileStorage::READ);
+    const std::string path_to_yaml = "./src/data.yml";
+    cv::FileStorage  fs2( path_to_yaml, cv::FileStorage::READ);
     fs2["cameraMatrix"] >> cameraMatrix;
     fs2["distCoeffs"] >> distCoeffs;
 
@@ -110,13 +105,13 @@ SemiDenseTracking::SemiDenseTracking()
     processed_frames_since_keyframe = 0;
     create_inv_depth_discretization = 0;
 
-
-    boost::filesystem::remove_all((ros::package::getPath("rgbdtam")+"/src/map_and_poses").c_str());
-    boost::filesystem::create_directory((ros::package::getPath("rgbdtam")+"/src/map_and_poses").c_str());
-    boost::filesystem::remove_all((ros::package::getPath("rgbdtam")+"/src/evaluation").c_str());
-    boost::filesystem::create_directory((ros::package::getPath("rgbdtam")+"/src/evaluation").c_str());
-    boost::filesystem::remove_all((ros::package::getPath("rgbdtam")+"/src/results_depth_maps").c_str());
-    boost::filesystem::create_directory((ros::package::getPath("rgbdtam")+"/src/results_depth_maps").c_str());
+    boost::filesystem::path path = "./src";
+    boost::filesystem::remove_all(path / "map_and_poses");
+    boost::filesystem::create_directory(path / "map_and_poses");
+    boost::filesystem::remove_all(path / "evaluation");
+    boost::filesystem::create_directory(path / "evaluation");
+    boost::filesystem::remove_all(path / "results_depth_maps");
+    boost::filesystem::create_directory(path / "results_depth_maps");
 
     R = (cv::Mat_<float>(3, 3) <<  1,0,0,0,1,0,0,0,1);
     t = (cv::Mat_<float>(3, 1) << 0,0,0);
@@ -144,7 +139,7 @@ SemiDenseTracking::SemiDenseTracking()
 
     frame_struct = new FrameStruct;
     cont_frames = new int;
-    stamps_ros = new ros::Time;
+    //stamps_ros = new ros::Time;
 
     fs2.release();
 }
@@ -376,7 +371,7 @@ void UpdateFieldOfView(SemiDenseTracking *semidense_tracker,cv::Mat &R, cv::Mat 
 
 void ThreadViewerUpdater( SemiDenseTracking *semidense_tracker,SemiDenseMapping *semidense_mapper, DenseMapping *dense_mapper)
 {
-   while((ros::ok() && semidense_tracker->keepvisualizer))
+   while(semidense_tracker->keepvisualizer)
    {
         {
             boost::mutex::scoped_lock lock( semidense_tracker->loopcloser_obj.guard);
@@ -399,7 +394,7 @@ void ThreadImageProcessing( SemiDenseTracking *semidense_tracker,
                             SemiDenseMapping *semidense_mapper,
                             DenseMapping *dense_mapper)
 {
-    while(ros::ok() && dense_mapper->sequence_has_finished == false  || semidense_mapper->num_keyframes < 2)
+    while(dense_mapper->sequence_has_finished == false  || semidense_mapper->num_keyframes < 2)
     {
         if(!semidense_tracker->image_processing_semaphore)
         {
@@ -471,15 +466,15 @@ void ThreadImageProcessing( SemiDenseTracking *semidense_tracker,
 
 void ThreadSemiDenseTracker(Images_class *images,SemiDenseMapping *semidense_mapper,\
                             SemiDenseTracking *semidense_tracker,DenseMapping *dense_mapper,\
-                            MapShared *Map,ros::Publisher *vis_pub,image_transport::Publisher *pub_image)
+                            MapShared *Map)
 {
-    while(ros::ok() && dense_mapper->sequence_has_finished == false || semidense_mapper->num_keyframes < 2)
+    while(dense_mapper->sequence_has_finished == false || semidense_mapper->num_keyframes < 2)
     {
         if (semidense_mapper->semaphore == false || (semidense_tracker->use_ros == 1))
         {
             if(semidense_tracker->use_ros == 0 || semidense_tracker->image_processing_semaphore == true)
             {
-                semidense_tracking(images,semidense_mapper,semidense_tracker,dense_mapper,Map,vis_pub,pub_image);
+                semidense_tracking(images,semidense_mapper,semidense_tracker,dense_mapper,Map);
                 //boost::this_thread::sleep(boost::posix_time::milliseconds(1));
 
                 /// check if the sequence has finished
@@ -505,7 +500,6 @@ void ThreadSemiDenseTracker(Images_class *images,SemiDenseMapping *semidense_map
     /// We keep the visualizer for a few seconds even though the sequence has already finished
 
     cout << "thread tracking finished" << endl;
-    ros::shutdown();
     return;
 }
 
@@ -754,7 +748,7 @@ void map_reuse(SemiDenseTracking *semidense_tracker,SemiDenseMapping *semidense_
 
 
 void relocalization(SemiDenseTracking *semidense_tracker,SemiDenseMapping *semidense_mapper,cv::Mat &image_frame_aux
-                    ,cv::Mat &R_kf, cv::Mat &t_kf,image_transport::Publisher *pub_image){
+                    ,cv::Mat &R_kf, cv::Mat &t_kf) {
     if(semidense_tracker->SystemIsLost)
     {
         int oldest_kf = -1;
@@ -851,8 +845,8 @@ void relocalization(SemiDenseTracking *semidense_tracker,SemiDenseMapping *semid
             }
         }else{
             //SYSTEM IS LOST, print current frame;
-            sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(),"bgr8",image_frame_aux).toImageMsg();
-            pub_image->publish(msg);
+            //sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(),"bgr8",image_frame_aux).toImageMsg();
+            //pub_image->publish(msg);
         }
     }
 }
@@ -940,7 +934,7 @@ void get_depth_image( SemiDenseTracking *semidense_tracker,
 
 void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,\
                         SemiDenseTracking *semidense_tracker,DenseMapping *dense_mapper,\
-                        MapShared *Map,ros::Publisher *vis_pub,image_transport::Publisher *pub_image)
+                        MapShared *Map)
 {
 
     if (semidense_tracker->frames.size() <= 2 && semidense_tracker->use_ros  == 0)
@@ -1075,7 +1069,7 @@ void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,
 
 
                 /// RELOCALIZATION IF NEEDED
-                relocalization(semidense_tracker,semidense_mapper,image_frame_aux,R_kf, t_kf,pub_image);
+                relocalization(semidense_tracker,semidense_mapper,image_frame_aux,R_kf, t_kf);
                 /// RELOCALIZATION IF NEEDED
 
                 //// PREPARE SEMIDENSE
@@ -1239,7 +1233,7 @@ void semidense_tracking(Images_class *images,SemiDenseMapping *semidense_mapper,
                                         semidense_tracker->weight_geo[semidense_tracker->pyramid_levels-1]);
 
                         show_error_photo( coordinates_cam_show,image_frame_aux,num_pixels_sd2project,
-                                          pub_image,semidense_tracker->weight[semidense_tracker->pyramid_levels-1]);
+                                          semidense_tracker->weight[semidense_tracker->pyramid_levels-1]);
                     }
 
 
@@ -1661,7 +1655,7 @@ void optimize_camera_pose(int num_keyframes,SemiDenseTracking *semidense_tracker
 }
 
 void show_error_photo( cv::Mat &coordinates_cam, cv::Mat &image_print,
-                       int num_pixels_sd2project,image_transport::Publisher *pub_image,cv::Mat &weight)
+                       int num_pixels_sd2project, cv::Mat &weight)
 
 {
     int imsize_x =image_print.cols-1;
@@ -1722,8 +1716,8 @@ void show_error_photo( cv::Mat &coordinates_cam, cv::Mat &image_print,
             }
         }
     }
-    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(),"bgr8",image_print).toImageMsg();
-    pub_image->publish(msg);
+    //sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(),"bgr8",image_print).toImageMsg();
+    //pub_image->publish(msg);
 }
 
 void show_error_geo(cv::Mat &coordinates_cam,  cv::Mat &image_print, cv::Mat &weight_geo)

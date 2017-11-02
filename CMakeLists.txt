@@ -17,7 +17,7 @@ set(CMAKE_BUILD_TYPE Debug)
 set(DENSE_SOURCE_FILES     
 		# src/SemiDenseMapping.cpp
   #               src/DenseMapping.cpp
-  #               src/SemiDenseTracking.cpp
+                 src/SemiDenseTracking.cpp
                 src/vo_system.cpp
                 # src/superpixel.cpp
                 # src/loopcloser.cpp
