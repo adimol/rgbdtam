@@ -73,7 +73,7 @@ public:
     vo_system();
 
 
-    void imgcb(const sensor_msgs::Image::ConstPtr& msg);
+    void imgcb(cv::Mat& rgb);
     vector<string> left_image_names;
 
 
@@ -91,7 +91,8 @@ public:
 
 
     float depth_stamps;
-    ros::Time stamps_ros;
+    // ros::Time stamps_ros;
+    double stamps_ros;
 
     ros::NodeHandle nh;
     image_transport::Subscriber sub1;
@@ -108,7 +109,8 @@ public:
 
 
     void depthcb(const sensor_msgs::Image::ConstPtr& msg);
-    ros::Time  stamps_depth_ros;
+    // ros::Time  stamps_depth_ros;
+    double stamps_depth_ros;
     cv::Mat image_depth;
     image_transport::Subscriber sub2;
     int counter_depth_images;
@@ -117,6 +119,3 @@ public:
 
 };
 #endif
-
-
-

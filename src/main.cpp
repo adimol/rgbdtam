@@ -102,6 +102,19 @@ int main(int argc, char** argv)
 
     ///Launching rgbdtam
     vo_system vo_system_object;
+    sleep(3);
+    for (int i = 0; i < 2584; i++) {
+        std::stringstream str;
+        str << "/mnt/scratch/local/Adrian/datasets/office/rgbd_dataset_freiburg3_long_office_household/rgb/final/"
+            << std::setw(8) << std::setfill('0') << i << ".png";
+        cout<<"Reading image: " << i << endl;
+
+        cv::Mat img(cv::imread(str.str().c_str(), 1));
+        cout << img.size()<<endl;
+        vo_system_object.imgcb(img);
+        usleep(100000);
+
+    }
     ///Launching rgbdtam
     ros::spin();
 

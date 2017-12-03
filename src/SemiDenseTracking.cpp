@@ -290,10 +290,8 @@ void undistort_image(cv::Mat &image_frame, cv::Mat &cameraMatrixAux,cv::Mat &dis
         float alpha = 0;
         newCameraMatrix = cv::getOptimalNewCameraMatrix(cameraMatrixAux,distCoeffs,ksize,alpha,ksize1);
 
-
         cv::Mat image_frame_undistorted;
         cv::undistort(image_frame,image_frame_undistorted,cameraMatrixAux,distCoeffs,newCameraMatrix);
-
 
         cv::Mat R;
         cv::initUndistortRectifyMap(cameraMatrixAux,distCoeffs,R,newCameraMatrix,ksize,CV_16SC2,mapX,mapY);
@@ -497,7 +495,7 @@ void ThreadSemiDenseTracker(Images_class *images,SemiDenseMapping *semidense_map
     cout << "Printing keyframes after posegraph optimization" << endl;
     semidense_tracker->loopcloser_obj.print_keyframes_after_optimization();
     cout << "Total keyframes: " << semidense_tracker->loopcloser_obj.keyframes_vector.size() << endl;
- 
+
 
     /// We keep the visualizer for a few seconds even though the sequence has already finished
     boost::this_thread::sleep(boost::posix_time::milliseconds(5000));

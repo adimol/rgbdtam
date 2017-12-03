@@ -12,15 +12,15 @@ local_maps_close_number: 1
 
 limit_grad: 0.7
 
-use_ros: 1 
+use_ros: 1
 path_to_folder:""
-use_kinect: 1
+use_kinect: 0
 use_depth_tracking: 1
 kinect_initialization: 1
 use_relocalization: 1
 depth_rgb_offset: -0.020
 depth_range_print: 1.7
- 
+
 
 bgr2rgb: 0
 camera_path:"/camera/rgb/image_color"
@@ -45,6 +45,3 @@ limit_ratio_sing_val : 100
 limit_normalized_residual: 0.30
 matchings_active_search: 3
 init_frame: 30
-
-
-

@@ -179,6 +179,7 @@ public:
     vector<double> stamps_depth_ros;
     cv::Mat image_depth_keyframe,image_depth_keyframe_2track,image_depth_frame_2track;
     float associated_frames;
+    int count = 0;
 
 
     bool reusing_map{false};

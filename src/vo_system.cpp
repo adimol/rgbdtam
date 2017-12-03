@@ -95,16 +95,16 @@ vo_system::vo_system(){
 
     if(use_ros == 1)
     {
-        sub1 = it.subscribe(camera_path,1, & vo_system::imgcb,this);
-        if(semidense_tracker.use_kinect || semidense_mapper.kinect_initialization )
-            sub2 = it.subscribe(depth_camera_path,1, & vo_system::depthcb,this);
+        // sub1 = it.subscribe(camera_path,1, & vo_system::imgcb,this);
+        // if(semidense_tracker.use_kinect || semidense_mapper.kinect_initialization )
+        //     sub2 = it.subscribe(depth_camera_path,1, & vo_system::depthcb,this);
     }
 }
 
 
 
 
-void vo_system::imgcb(const sensor_msgs::Image::ConstPtr& msg)
+void vo_system::imgcb(cv::Mat& rgb)
 {
     ///read images
     try
@@ -112,12 +112,13 @@ void vo_system::imgcb(const sensor_msgs::Image::ConstPtr& msg)
         boost::mutex::scoped_lock lock(semidense_tracker.loopcloser_obj.guard);
 
 
-        cv_bridge::CvImageConstPtr cv_ptr;
-        cv_bridge::toCvShare(msg);
-        cv_ptr = cv_bridge::toCvShare(msg);
+        // cv_bridge::CvImageConstPtr cv_ptr;
+        // cv_bridge::toCvShare(msg);
+        // cv_ptr = cv_bridge::toCvShare(msg);
 
 
-        cv::Mat image =  cv_ptr->image.clone();
+        // cv::Mat image =  cv_ptr->image.clone();
+        cv::Mat image =  rgb.clone();
 
 
         /// add gaussian blur
@@ -129,7 +130,10 @@ void vo_system::imgcb(const sensor_msgs::Image::ConstPtr& msg)
         /// add gaussian blur
 
         frame_struct.image_frame =image.clone();
-        frame_struct.stamps = cv_ptr->header.stamp.toSec();
+        // frame_struct.stamps = cv_ptr->header.stamp.toSec();
+        // frame_struct.count = cont_frames;
+        frame_struct.stamps += 0.1;
+        //cout<<"rgb:... "<<frame_struct.stamps<<endl;
 
         semidense_tracker.frame_struct_vector.push_back(frame_struct);
 
@@ -153,7 +157,10 @@ void vo_system::depthcb(const sensor_msgs::Image::ConstPtr& msg)
         cv_bridge::toCvShare(msg);
         cv_ptr = cv_bridge::toCvShare(msg);
 
-        stamps_depth_ros =  cv_ptr->header.stamp;
+        //stamps_depth_ros =  cv_ptr->header.stamp;
+        stamps_depth_ros += 0.1;
+        //cout<<"depth:... "<<stamps_depth_ros.toSec() * 1000<<endl;
+
         image_depth =  cv_ptr->image.clone();
 
 
@@ -177,7 +184,7 @@ void vo_system::depthcb(const sensor_msgs::Image::ConstPtr& msg)
         //UNDISTORT DEPTH MAP
 
         semidense_mapper.image_depth_keyframes[counter_depth_images%SIZE_DEPTH_VECTOR] = image_depth;
-        semidense_mapper.stamps_depth_ros[counter_depth_images%SIZE_DEPTH_VECTOR] = stamps_depth_ros.toSec();
+        semidense_mapper.stamps_depth_ros[counter_depth_images%SIZE_DEPTH_VECTOR] = stamps_depth_ros;
         counter_depth_images++;
     }
     catch (const cv_bridge::Exception& e)
