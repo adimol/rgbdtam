@@ -22,15 +22,13 @@
 #include <fstream>
 #include <iomanip>    // Needed for stream modifiers fixed and set precision
 
-#include <ros/package.h>
-
 
 vo_system::vo_system(){
 
 
     ///vo_system launch the three threads, tracking, semidense mapping and dense mapping (3D superpixels)
 
-    cv::FileStorage  fs2( (ros::package::getPath("rgbdtam")+"/src/data.yml").c_str(), cv::FileStorage::READ);
+    cv::FileStorage  fs2("/localhome/mbax2am3/checkout/rgbdtam_ws/src/rgbdtam/src/data.yml", cv::FileStorage::READ);
 
     std::string camera_path;
     std::string depth_camera_path;
@@ -45,16 +43,16 @@ vo_system::vo_system(){
 
     int calculate_superpixels = (int)fs2["calculate_superpixels"];
 
-    image_transport::ImageTransport it(nh);
-
-    odom_pub = nh.advertise<nav_msgs::Odometry>("odom1", 50);
-    /// advertising 3D map and camera poses in rviz
-    pub_cloud = nh.advertise<sensor_msgs::PointCloud2> ("rgbdtam/map", 1);
-    pub_poses = nh.advertise<sensor_msgs::PointCloud2> ("points_poses", 1);
-    vis_pub = nh.advertise<visualization_msgs::Marker>( "rgbdtam/visualization_marker", 0 );
-    /// advertising 3D map and camera poses in rviz
-    /// pubishing current frame and the reprojection of the 3D map
-    pub_image = it.advertise("rgbdtam/camera/image",1);
+    // image_transport::ImageTransport it(nh);
+    //
+    // odom_pub = nh.advertise<nav_msgs::Odometry>("odom1", 50);
+    // /// advertising 3D map and camera poses in rviz
+    // pub_cloud = nh.advertise<sensor_msgs::PointCloud2> ("rgbdtam/map", 1);
+    // pub_poses = nh.advertise<sensor_msgs::PointCloud2> ("points_poses", 1);
+    // vis_pub = nh.advertise<visualization_msgs::Marker>( "rgbdtam/visualization_marker", 0 );
+    // /// advertising 3D map and camera poses in rviz
+    // /// pubishing current frame and the reprojection of the 3D map
+    // pub_image = it.advertise("rgbdtam/camera/image",1);
     /// pubishing current frame and the reprojection of the 3D map
     semidense_tracker.cont_frames = &cont_frames;
     semidense_tracker.frame_struct = &frame_struct;
@@ -66,12 +64,12 @@ vo_system::vo_system(){
         case 0:
         {
             ///Launch semidense tracker thread
-            boost::thread thread_semidense_tracker(&ThreadSemiDenseTracker,&images,&semidense_mapper,&semidense_tracker,&dense_mapper,&Map,&vis_pub,&pub_image);
+            boost::thread thread_semidense_tracker(&ThreadSemiDenseTracker,&images,&semidense_mapper,&semidense_tracker,&dense_mapper,&Map);
         };break;
         case 1:
         {
             ///Launch semidense mapper thread
-            boost::thread thread_semidense_mapper(&ThreadSemiDenseMapper,&images,&images_previous_keyframe,&semidense_mapper,&semidense_tracker,&dense_mapper,&Map,&pub_cloud);
+            boost::thread thread_semidense_mapper(&ThreadSemiDenseMapper,&images,&images_previous_keyframe,&semidense_mapper,&semidense_tracker,&dense_mapper,&Map);
         };break;
         case 2:
         {
@@ -107,8 +105,8 @@ vo_system::vo_system(){
 void vo_system::imgcb(cv::Mat& rgb)
 {
     ///read images
-    try
-    {
+    // try
+    // {
         boost::mutex::scoped_lock lock(semidense_tracker.loopcloser_obj.guard);
 
 
@@ -139,56 +137,56 @@ void vo_system::imgcb(cv::Mat& rgb)
 
 
         cont_frames++;
-    }
-    catch (const cv_bridge::Exception& e)
-    {
-        ROS_ERROR("cv_bridge exception: %s", e.what());
-    }
+    // }
+    // catch (const cv_bridge::Exception& e)
+    // {
+    //     ROS_ERROR("cv_bridge exception: %s", e.what());
+    // }
 }
 
 
-
-void vo_system::depthcb(const sensor_msgs::Image::ConstPtr& msg)
-{
-    ///read images
-    try {
-        cv_bridge::CvImageConstPtr cv_ptr;
-
-        cv_bridge::toCvShare(msg);
-        cv_ptr = cv_bridge::toCvShare(msg);
-
-        //stamps_depth_ros =  cv_ptr->header.stamp;
-        stamps_depth_ros += 0.1;
-        //cout<<"depth:... "<<stamps_depth_ros.toSec() * 1000<<endl;
-
-        image_depth =  cv_ptr->image.clone();
-
-
-        image_depth.convertTo(image_depth,CV_32FC1);
-
-        for(int i =  0;i < image_depth.rows; i++){
-            for(int j = 0; j< image_depth.cols; j++){
-                if( isnan( image_depth.at<float>(i,j)))
-                    image_depth.at<float>(i,j) = 0;
-            }
-        }
-        //UNDISTORT DEPTH MAP
-        cv::Size ksize;
-        ksize.width = image_depth.cols;
-        ksize.height = image_depth.rows;
-        cv::Mat undistorted_depth_map;
-        if(semidense_tracker.mapX.rows>0)
-        {cv::remap(image_depth,undistorted_depth_map,semidense_tracker.mapX,semidense_tracker.mapY,
-                   CV_INTER_NN,cv::BORDER_CONSTANT,cv::Scalar(0,0,0));
-            image_depth = undistorted_depth_map;}
-        //UNDISTORT DEPTH MAP
-
-        semidense_mapper.image_depth_keyframes[counter_depth_images%SIZE_DEPTH_VECTOR] = image_depth;
-        semidense_mapper.stamps_depth_ros[counter_depth_images%SIZE_DEPTH_VECTOR] = stamps_depth_ros;
-        counter_depth_images++;
-    }
-    catch (const cv_bridge::Exception& e)
-    {
-        ROS_ERROR("cv_bridge exception: %s", e.what());
-    }
-}
+//
+// void vo_system::depthcb(const sensor_msgs::Image::ConstPtr& msg)
+// {
+//     ///read images
+//     try {
+//         cv_bridge::CvImageConstPtr cv_ptr;
+//
+//         cv_bridge::toCvShare(msg);
+//         cv_ptr = cv_bridge::toCvShare(msg);
+//
+//         //stamps_depth_ros =  cv_ptr->header.stamp;
+//         stamps_depth_ros += 0.1;
+//         //cout<<"depth:... "<<stamps_depth_ros.toSec() * 1000<<endl;
+//
+//         image_depth =  cv_ptr->image.clone();
+//
+//
+//         image_depth.convertTo(image_depth,CV_32FC1);
+//
+//         for(int i =  0;i < image_depth.rows; i++){
+//             for(int j = 0; j< image_depth.cols; j++){
+//                 if( isnan( image_depth.at<float>(i,j)))
+//                     image_depth.at<float>(i,j) = 0;
+//             }
+//         }
+//         //UNDISTORT DEPTH MAP
+//         cv::Size ksize;
+//         ksize.width = image_depth.cols;
+//         ksize.height = image_depth.rows;
+//         cv::Mat undistorted_depth_map;
+//         if(semidense_tracker.mapX.rows>0)
+//         {cv::remap(image_depth,undistorted_depth_map,semidense_tracker.mapX,semidense_tracker.mapY,
+//                    CV_INTER_NN,cv::BORDER_CONSTANT,cv::Scalar(0,0,0));
+//             image_depth = undistorted_depth_map;}
+//         //UNDISTORT DEPTH MAP
+//
+//         semidense_mapper.image_depth_keyframes[counter_depth_images%SIZE_DEPTH_VECTOR] = image_depth;
+//         semidense_mapper.stamps_depth_ros[counter_depth_images%SIZE_DEPTH_VECTOR] = stamps_depth_ros;
+//         counter_depth_images++;
+//     }
+//     catch (const cv_bridge::Exception& e)
+//     {
+//         ROS_ERROR("cv_bridge exception: %s", e.what());
+//     }
+// }

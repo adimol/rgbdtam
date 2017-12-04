@@ -22,12 +22,11 @@
 
 
 #include "rgbdtam/loopcloser.h"
-#include <ros/package.h>
 #include <Eigen/Dense>
 
 loopcloser::loopcloser()
 {
-    cv::FileStorage  fs2( (ros::package::getPath("rgbdtam")+"/src/data.yml").c_str(), cv::FileStorage::READ);
+    cv::FileStorage  fs2("/localhome/mbax2am3/checkout/rgbdtam_ws/src/rgbdtam/src/data.yml", cv::FileStorage::READ);
 
     use_kinect  = (int)fs2["use_kinect"];
 
@@ -35,7 +34,7 @@ loopcloser::loopcloser()
 
     char buffer[150];
 
-    sprintf (buffer,(ros::package::getPath("rgbdtam") + "/ThirdParty/DBoW2/ORBvoc.txt").c_str());
+    sprintf (buffer,("/localhome/mbax2am3/checkout/rgbdtam_ws/src/rgbdtam/ThirdParty/DBoW2/ORBvoc.txt"));
 
     try{
         std::ifstream infile(buffer);
@@ -69,13 +68,13 @@ loopcloser::loopcloser()
 
     camera2PCLadded = false;
 
-    viewer = new pcl::visualization::PCLVisualizer("Dense Map and camera position");
-    viewer->setBackgroundColor (0.75f,0.75f, 0.75f);
-    viewer->setSize(1100,1100);
+    // viewer = new pcl::visualization::PCLVisualizer("Dense Map and camera position");
+    // viewer->setBackgroundColor (0.75f,0.75f, 0.75f);
+    // viewer->setSize(1100,1100);
 
     //TODO: the viewer will not work if this auxiliar viewer1 is not added.
-    pcl::visualization::PCLVisualizer viewer1 ("aux viewer");
-    viewer1.setSize(3,3);
+    // pcl::visualization::PCLVisualizer viewer1 ("aux viewer");
+    // viewer1.setSize(3,3);
 
     depth_map_iterator = 1;
     if(use_kinect == 1) depth_map_iterator = 4;
@@ -425,8 +424,8 @@ void loopcloser::calculate_orb_and_load_features(  cv::Mat &image,vector<cv::Mat
 
         cv::Mat mask_orb;
         #if CV_MAJOR_VERSION >= 3
-        cv::Ptr<cv::ORB> orb = cv::ORB::create(nFeatures,1.2,8,sizePatch,0,2,cv::ORB::HARRIS_SCORE,sizePatch);        
-        orb->detectAndCompute(image_orb, mask_orb, keypoints_orb, descriptors_orb);        
+        cv::Ptr<cv::ORB> orb = cv::ORB::create(nFeatures,1.2,8,sizePatch,0,2,cv::ORB::HARRIS_SCORE,sizePatch);
+        orb->detectAndCompute(image_orb, mask_orb, keypoints_orb, descriptors_orb);
         changeStructure_orb(descriptors_orb, features.back(), orb->descriptorSize());
         #else
         cv::ORB orb(nFeatures,1.2,8,sizePatch,0,2,cv::ORB::HARRIS_SCORE,sizePatch);
@@ -1309,10 +1308,10 @@ void loopcloser::addCameraPCL(cv::Mat &R, cv::Mat &t){
 
     if(!camera2PCLadded)
     {
-        viewer->addCoordinateSystem (0.25,  t_affine, "camera", 0);
+        //viewer->addCoordinateSystem (0.25,  t_affine, "camera", 0);
         camera2PCLadded = true;
     }else{
-        viewer->updateCoordinateSystemPose( "camera",  t_affine);
+        //viewer->updateCoordinateSystemPose( "camera",  t_affine);
     }
 }
 
@@ -1325,20 +1324,20 @@ void loopcloser::compute_keyframe(cv::Mat &R, cv::Mat &t, cv::Mat &image, int nu
     num_keyframe = keyframes_vector.size();
     keyframe keyframe_aux;
 
-    if(!viewer->wasStopped()){
-
-        boost::mutex::scoped_lock lock(guard);
-
-        char buffer[150];
-        if(num_keyframe % depth_map_iterator == 0)
-        {
-            pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-            populate_denseMap(cloud, point_cloud_toprint);
-            sprintf(buffer,"denseMap%d", num_keyframe);
-            viewer->addPointCloud (cloud,buffer);
-            keyframe_aux.point_cloud_toprint = point_cloud_toprint.clone();
-        }
-    }
+    // if(!viewer->wasStopped()){
+    //
+    //     boost::mutex::scoped_lock lock(guard);
+    //
+    //     char buffer[150];
+    //     if(num_keyframe % depth_map_iterator == 0)
+    //     {
+    //         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+    //         populate_denseMap(cloud, point_cloud_toprint);
+    //         sprintf(buffer,"denseMap%d", num_keyframe);
+    //         viewer->addPointCloud (cloud,buffer);
+    //         keyframe_aux.point_cloud_toprint = point_cloud_toprint.clone();
+    //     }
+    // }
 
     cv::Mat matchings(0,2,CV_32FC1);
     cv::Mat U,V,S;

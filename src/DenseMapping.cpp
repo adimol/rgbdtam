@@ -21,7 +21,6 @@
 #include "rgbdtam/DenseMapping.h"
 #include "rgbdtam/SemiDenseMapping.h"
 #include "rgbdtam/vo_system.h"
-#include <ros/package.h>
 
 #include <Eigen/Dense>
 #include <opencv2/core/eigen.hpp>
@@ -37,7 +36,7 @@ void tocd(){U_SEGS(t2d);
 
 DenseMapping::DenseMapping()
 {
-    cv::FileStorage  fs2( (ros::package::getPath("rgbdtam")+"/src/data.yml").c_str(), cv::FileStorage::READ);
+    cv::FileStorage  fs2("/localhome/mbax2am3/checkout/rgbdtam_ws/src/rgbdtam/src/data.yml", cv::FileStorage::READ);
 
     DenseMapping::set_do_dense(0);
     DenseMapping::init_analisis();
@@ -101,18 +100,18 @@ void print_poses(cv::Mat &points, char buffer[],int color)
 
 
 
-void ThreadDenseMapper(DenseMapping *pdense_mapper ,ros::Publisher *pub_cloud)
+void ThreadDenseMapper(DenseMapping *pdense_mapper)
 {
-    while(ros::ok() && pdense_mapper->sequence_has_finished == false )
+    while(pdense_mapper->sequence_has_finished == false )
     {
-        fullydense_mapping(pdense_mapper,pub_cloud);
+        fullydense_mapping(pdense_mapper);
         boost::this_thread::sleep(boost::posix_time::milliseconds(33));
     }
     cout << "thread dense mapping finished" << endl;
 }
 
 
-void fullydense_mapping(DenseMapping *pdense_mapper,ros::Publisher *pub_cloud)
+void fullydense_mapping(DenseMapping *pdense_mapper)
 {
     if (pdense_mapper->get_do_dense()> 0.5)
     {
@@ -451,7 +450,7 @@ void calculate_superpixels_and_setdata(Images_class &images,  int reference_imag
     char curre_dir[150];
     getcwd(curre_dir,149);
 
-    chdir((ros::package::getPath("rgbdtam")+"/ThirdParty/segment").c_str());
+    chdir("/localhome/mbax2am3/checkout/rgbdtam_ws/src/rgbdtam/src/ThirdParty/segment");
 
 
     char buffer[150];

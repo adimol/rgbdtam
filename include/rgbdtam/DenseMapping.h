@@ -38,7 +38,6 @@
 #include <string>
 //directorio
 #include <dirent.h>
-#include <ros/ros.h>
 
 #include "rgbdtam/superpixel.h"
 using namespace std;
@@ -46,7 +45,6 @@ using namespace std;
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
-#include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
 #include "opencv2/imgproc/imgproc.hpp"
 
@@ -104,11 +102,11 @@ private:
 void print_poses(cv::Mat &points, char buffer[],int color);
 
 ///dense mapping thread
-void ThreadDenseMapper(DenseMapping *pdense_mapper, ros::Publisher *pub_cloud);
+void ThreadDenseMapper(DenseMapping *pdense_mapper);
 ///dense mapping thread
 
 ///dense mapping function
-void fullydense_mapping(DenseMapping *pdense_mapper,ros::Publisher *pub_cloud);
+void fullydense_mapping(DenseMapping *pdense_mapper);
 ///dense mapping function
 
 void copy_from_dense2images(DenseMapping &dense, Images_class &images);

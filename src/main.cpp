@@ -41,12 +41,8 @@
 
 /////ROS IMAGE SUBSCRIBER
 #include <iostream>
-#include <ros/ros.h>
 #include <sensor_msgs/Image.h>
-#include <sensor_msgs/image_encodings.h>
-#include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
-#include <image_transport/image_transport.h>
 
 
 #include <fstream>
@@ -73,9 +69,7 @@ using namespace std;
 #include <iostream>
 #include <stdio.h>
 #include <boost/filesystem.hpp>
-#include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
-#include<sensor_msgs/Imu.h>
 
 
 #include <thread>
@@ -92,8 +86,8 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "camera_image");
-    ros::start();
+    // ros::init(argc, argv, "camera_image");
+    // ros::start();
 
     //srand ( (unsigned)time(0) );
     omp_set_dynamic(0);
@@ -116,7 +110,7 @@ int main(int argc, char** argv)
 
     }
     ///Launching rgbdtam
-    ros::spin();
+    // ros::spin();
 
     cout << "leaving..." << endl;
     return  0;

@@ -36,7 +36,6 @@
 #include <string>
 //directorio
 #include <dirent.h>
-#include <ros/ros.h>
 
 //#include "superpixel.h"
 #include "rgbdtam/DenseMapping.h"
@@ -46,14 +45,13 @@ using namespace std;
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
-#include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
 #include "opencv2/imgproc/imgproc.hpp"
 
 
-#include <ros/ros.h>
-#include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
+// #include <pcl_ros/point_cloud.h>
+#include <pcl/common/projection_matrix.h>
 
 
 // TIC - TOC
@@ -193,10 +191,10 @@ class SemiDenseTracking;  // It is defined also here due to cross reference (#in
 
 ///semidesen mapper thread
 void ThreadSemiDenseMapper(Images_class *images,Images_class *images_previous_keyframe,SemiDenseMapping *semidense_mapper,\
-                           SemiDenseTracking *semidense_tracker,DenseMapping *dense_mapper,MapShared *Map, ros::Publisher *pub_cloud);
+                           SemiDenseTracking *semidense_tracker,DenseMapping *dense_mapper,MapShared *Map);
 
 ///semidense mapper function
-void semidense_mapping(DenseMapping *dense_mapper,SemiDenseMapping *semidense_mapper,SemiDenseTracking *semidense_tracker,MapShared  *Map,Images_class *pimages,Images_class  *pimages_previous_keyframe,ros::Publisher *pub_cloud);
+void semidense_mapping(DenseMapping *dense_mapper,SemiDenseMapping *semidense_mapper,SemiDenseTracking *semidense_tracker,MapShared  *Map,Images_class *pimages,Images_class  *pimages_previous_keyframe);
 
 //void copy_first_and_last_images(Images_class &images, Images_class &images_map);
 void copy_first_and_last_images(Images_class &images, Images_class &images_map,float &mean_value,float &translational_ratio_th_min);
