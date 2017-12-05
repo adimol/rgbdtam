@@ -7,14 +7,14 @@ set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 find_package(cmake_modules REQUIRED)
-find_package(catkin REQUIRED COMPONENTS roscpp sensor_msgs image_transport cv_bridge tf)
+#find_package(catkin REQUIRED COMPONENTS roscpp sensor_msgs image_transport cv_bridge tf)
 
 find_package(PCL 1.7.2 REQUIRED)
 
 set(CMAKE_BUILD_TYPE Debug)
-catkin_package(CATKIN_DEPENDS roscpp sensor_msgs image_transport cv_bridge tf)
+#catkin_package(CATKIN_DEPENDS roscpp sensor_msgs image_transport cv_bridge tf)
 
-set(DENSE_SOURCE_FILES     
+set(DENSE_SOURCE_FILES
 		src/SemiDenseMapping.cpp
                 src/DenseMapping.cpp
                 src/SemiDenseTracking.cpp
@@ -25,7 +25,7 @@ set(DENSE_SOURCE_FILES
                 src/main.cpp
 )
 
-set(DENSE_HEADER_FILES  
+set(DENSE_HEADER_FILES
 		include/rgbdtam/SemiDenseMapping.h
                 include/rgbdtam/DenseMapping.h
                 include/rgbdtam/SemiDenseTracking.h
@@ -40,14 +40,18 @@ find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Cholmod REQUIRED)
 
+message(${OpenCV_INCLUDE_DIRS})
+message(${OpenCV_LIBS})
+
 include_directories(
 ${PROJECT_SOURCE_DIR}
+${PROJECT_SOURCE_DIR}/include
 ${EIGEN3_INCLUDE_DIR}
 ${CHOLMOD_INCLUDE_DIR}
 )
 
 include_directories(
-  include ${catkin_INCLUDE_DIRS}
+  #include ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
@@ -81,9 +85,9 @@ link_directories(${PCL_LIBRARY_DIRS})
 ## Build ##
 ###########
 add_executable(rgbdtam ${DENSE_HEADER_FILES} ${DENSE_SOURCE_FILES})
-target_link_libraries(rgbdtam ${OpenCV_LIBS} ${catkin_LIBRARIES}
+target_link_libraries(rgbdtam ${OpenCV_LIBS}
 ${OpenCV_LIBS}
-${EIGEN3_LIBS}
+#${EIGEN3_LIBS}
 ${PCL_LIBRARIES}
 cholmod
 ${PROJECT_SOURCE_DIR}/ThirdParty/DBoW2/lib/libDBoW2.so
@@ -95,7 +99,7 @@ ${PROJECT_SOURCE_DIR}/ThirdParty/g2o/lib/libg2o_types_sba.so
 ${PROJECT_SOURCE_DIR}/ThirdParty/g2o/lib/libg2o_types_sim3.so
 ${PROJECT_SOURCE_DIR}/ThirdParty/g2o/lib/libg2o_types_slam3d.so
 )
- install(PROGRAMS
-  scripts/run_bag
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+# install(PROGRAMS
+#  scripts/run_bag
+#  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)
